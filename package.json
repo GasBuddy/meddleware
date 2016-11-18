@@ -1,16 +1,17 @@
 {
-  "name": "meddleware",
-  "version": "3.0.3",
+  "name": "@gasbuddy/meddleware",
+  "version": "1.0.0",
   "description": "Configuration-based middleware registration for express.",
-  "main": "index.js",
+  "main": "build/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "tape test/*.js",
-    "cover": "istanbul cover tape -- test/*.js",
-    "lint": "jshint -c .jshintrc index.js",
-    "dryrun": "(TARBALL=`npm pack` ; tar ztvf $TARBALL ; rm -f $TARBALL)"
+    "test": "tap --node-arg=-r --node-arg=babel-register test/*.js",
+    "cover": "istanbul cover tap -- --node-arg=-r --node-arg=babel-register test/*.js",
+    "dryrun": "(TARBALL=`npm pack` ; tar ztvf $TARBALL ; rm -f $TARBALL)",
+    "build": "babel src --out-dir build",
+    "prepublish": "npm run build"
   },
   "keywords": [
     "express",
@@ -24,11 +25,12 @@
     }
   ],
   "devDependencies": {
+    "babel-cli": "^6.4.5",
+    "babel-preset-gasbuddy": "^1.0.0",
     "body-parser": "^1.0.2",
     "cookie-parser": "^1.0.1",
     "express": "^4.6.1",
     "istanbul": "^0.2.7",
-    "jshint": "^2.5.0",
     "morgan": "^1.0.0",
     "serve-favicon": "^2.0.1",
     "serve-static": "^1.0.4",
@@ -36,7 +38,7 @@
     "shortstop-handlers": "^1.0.0",
     "shortstop-regex": "0.0.1",
     "supertest": "^0.11.0",
-    "tape": "^2.12.3"
+    "tap": "^8.0.1"
   },
   "dependencies": {
     "caller": "0.0.1",

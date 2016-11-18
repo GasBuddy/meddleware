@@ -9,21 +9,21 @@
                     "middlewareA": {
                         "enabled": true,
                         "module": {
-                            "name": "./fixtures/middleware/parallel",
+                            "name": "../test/fixtures/middleware/parallel",
                             "method": "middlewareA"
                         }
                     },
                     "middlewareB": {
                         "enabled": true,
                         "module": {
-                            "name": "./fixtures/middleware/parallel",
+                            "name": "../test/fixtures/middleware/parallel",
                             "method": "middlewareB"
                         }
                     },
                     "middlewareC": {
                         "enabled": true,
                         "module": {
-                            "name": "./fixtures/middleware/parallel",
+                            "name": "../test/fixtures/middleware/parallel",
                             "method": "middlewareC"
                         }
                     }
@@ -32,21 +32,21 @@
             "middlewareB": {
                 "enabled": true,
                 "module": {
-                    "name": "./fixtures/middleware/parallel",
+                    "name": "../test/fixtures/middleware/parallel",
                     "method": "middlewareB"
                 }
             },
             "middlewareC": {
                 "enabled": true,
                 "module": {
-                    "name": "./fixtures/middleware/parallel",
+                    "name": "../test/fixtures/middleware/parallel",
                     "method": "middlewareC"
                 }
             },
             "middlewareD": {
                 "enabled": false,
                 "module": {
-                    "name": "./fixtures/middleware/parallel",
+                    "name": "../test/fixtures/middleware/parallel",
                     "method": "middlewareD"
                 }
             }

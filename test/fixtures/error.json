@@ -2,6 +2,6 @@
     "error": {
         "enabled": true,
         "priority": 10,
-        "module": "./fixtures/middleware/error"
+        "module": "../test/fixtures/middleware/error"
     }
 }

@@ -3,7 +3,7 @@
         "enabled": true,
         "priority": 10,
         "module": {
-            "name": "./fixtures/middleware/context",
+            "name": "../test/fixtures/middleware/context",
             "method": "run"
         }
     }

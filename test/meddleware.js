@@ -1,744 +1,753 @@
-'use strict';
-
-
-var test = require('tape'),
-    express = require('express'),
-    request = require('supertest'),
-    shortstop = require('shortstop'),
-    handlers = require('shortstop-handlers'),
-    ssRegex = require('shortstop-regex'),
-    meddle = require('../');
+import tap from 'tap';
+import express from 'express';
+import request from 'supertest';
+import shortstop from 'shortstop';
+import handlers from 'shortstop-handlers';
+import ssRegex from 'shortstop-regex';
+import meddle from '../src/index';
 
 function Resolver() {
-    var _resolver = shortstop.create();
-    _resolver.use('path', handlers.path(__dirname));
-    _resolver.use('regex', ssRegex());
-    return function (config, cb) {
-        _resolver.resolve(config, cb);
-    };
+  var _resolver = shortstop.create();
+  _resolver.use('path', handlers.path(__dirname));
+  _resolver.use('regex', ssRegex());
+  return function (config, cb) {
+    _resolver.resolve(config, cb);
+  };
 }
 
 var resolve = Resolver();
 
 
-test('meddleware', function (t) {
+tap.test('meddleware', function (t) {
 
-    t.test('empty config', function (t) {
-        var app;
+  t.test('empty config', async function (t) {
+    var app;
 
-        app = express();
-        app.use(meddle(require('./fixtures/empty')));
+    app = express();
+    app.use(await meddle(require('./fixtures/empty')));
 
-        t.equal(app._router.stack.length, 2, 'app middleware stack length is default length');
-        t.equal(app._router.stack[0].handle.name, 'query', 'middleware stack contains default "query" middleware');
-        t.equal(app._router.stack[1].handle.name, 'expressInit', 'middleware stack contains default "expressInit" middleware');
-        t.end();
+    t.equal(app._router.stack.length, 2, 'app middleware stack length is default length');
+    t.equal(app._router.stack[0].handle.name, 'query', 'middleware stack contains default "query" middleware');
+    t.equal(app._router.stack[1].handle.name, 'expressInit', 'middleware stack contains default "expressInit" middleware');
+    t.end();
+  });
+
+
+  t.test('built-in middleware config', function (t) {
+    var config, names, app;
+
+    config = require('./fixtures/defaults');
+    names = Object.keys(config);
+
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use(await meddle(config));
+
+      t.equal(app._router.stack.length, names.length + 2, 'middleware stack is appropriate length');
+      names.forEach(function (name, i) {
+        var handle = app._router.stack[i + 2].handle;
+        t.equal(typeof handle, 'function', 'middleware is correctly defined');
+        t.ok(handle.name.match(new RegExp(name, 'i')), 'middleware name is correct');
+      });
+      t.end();
+    });
+  });
+
+
+  t.test('not defined property', function (t) {
+    var config, app;
+
+    config = require('./fixtures/undefined');
+
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use(await meddle(config));
+
+      t.equal(app._router.stack.length, 6, 'middleware stack is appropriate length');
+      t.end();
     });
 
+  });
 
-    t.test('built-in middleware config', function (t) {
-        var config, names, app;
-
-        config = require('./fixtures/defaults');
-        names = Object.keys(config);
-
-        resolve(config, function (err, config) {
-            app = express();
-            app.use(meddle(config));
-
-            t.equal(app._router.stack.length, names.length + 2, 'middleware stack is appropriate length');
-            names.forEach(function (name, i) {
-                var handle = app._router.stack[i + 2].handle;
-                t.equal(typeof handle, 'function', 'middleware is correctly defined');
-                t.ok(handle.name.match(new RegExp(name, 'i')), 'middleware name is correct');
-            });
-            t.end();
-        });
-    });
-
-
-    t.test('not defined property', function (t) {
-        var config, app;
-
-        config = require('./fixtures/undefined');
-
-        resolve(config, function (err, config) {
-            app = express();
-            app.use(meddle(config));
-
-            t.equal(app._router.stack.length, 6, 'middleware stack is appropriate length');
-            t.end();
-        });
-
-    });
-
+  t.end();
 });
 
 
-test('priority', function (t) {
+tap.test('priority', function (t) {
 
-    t.test('no priority', function (t) {
-        var config, app, entry;
+  t.test('no priority', function (t) {
+    var config, app, entry;
 
-        config = require('./fixtures/no-priority');
-        resolve(config, function (err, config) {
-            app = express();
-            app.use(meddle(config));
+    config = require('./fixtures/no-priority');
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use(await meddle(config));
 
-            entry = app._router.stack[2];
-            t.ok(entry, 'position 2 middleware exists');
-            t.equal(typeof entry.handle, 'function', 'position 2 middleware is a function');
-            t.ok(entry.handle.name.match(/favicon/i), 'position 2 middleware has the expected name');
+      entry = app._router.stack[2];
+      t.ok(entry, 'position 2 middleware exists');
+      t.equal(typeof entry.handle, 'function', 'position 2 middleware is a function');
+      t.ok(entry.handle.name.match(/favicon/i), 'position 2 middleware has the expected name');
 
-            entry = app._router.stack[3];
-            t.ok(entry, 'position 3 middleware exists');
-            t.equal(typeof entry.handle, 'function', 'position 3 middleware is a function');
-            t.ok(entry.handle.name.match(/static/i), 'position 3 middleware has the expected name');
+      entry = app._router.stack[3];
+      t.ok(entry, 'position 3 middleware exists');
+      t.equal(typeof entry.handle, 'function', 'position 3 middleware is a function');
+      t.ok(entry.handle.name.match(/static/i), 'position 3 middleware has the expected name');
 
-            entry = app._router.stack[4];
-            t.ok(entry, 'position 4 middleware exists');
-            t.equal(typeof entry.handle, 'function', 'position 4 middleware is a function');
-            t.ok(entry.handle.name.match(/logger/i), 'position 4 middleware has the expected name');
+      entry = app._router.stack[4];
+      t.ok(entry, 'position 4 middleware exists');
+      t.equal(typeof entry.handle, 'function', 'position 4 middleware is a function');
+      t.ok(entry.handle.name.match(/logger/i), 'position 4 middleware has the expected name');
 
-            t.end();
-        });
+      t.end();
     });
+  });
 
+  t.end();
 });
 
 
-test('module', function (t) {
+tap.test('module', function (t) {
 
-    t.test('module not defined', function (t) {
-        var config = {
-            "missing": {
-                "enabled": true,
-                "module": null
-            }
-        };
+  t.test('module not defined', async function (t) {
+    var config = {
+      "missing": {
+        "enabled": true,
+        "module": null
+      }
+    };
 
-        t.throws(function() {
-            var app;
-            try {
-                app = express();
-                app.use(meddle(config));
-            } catch (e) {
-                t.ok(e instanceof TypeError, 'error is TypeError');
-                t.equal(e.message, 'No module section given in middleware entry', 'error message specifies module is not defined');
-                throw e;
-            }
-        });
+    var app;
+    try {
+      app = express();
+      app.use(await meddle(config));
+      t.fail('should have thrown');
+    } catch (e) {
+      t.ok(e instanceof TypeError, 'error is TypeError');
+      t.equal(e.message, 'No module section given in middleware entry', 'error message specifies module is not defined');
+    }
+  });
 
-        t.end();
-    });
+  t.test('module name not given', async function (t) {
+    var config = {
+      "missing": {
+        "enabled": true,
+        "module": {
+          "something": "else"
+        }
+      }
+    };
 
-    t.test('module name not given', function (t) {
-        var config = {
-            "missing": {
-                "enabled": true,
-                "module": {
-                    "something": "else"
-                }
-            }
-        };
-
-        t.throws(function() {
-            var app;
-            try {
-                app = express();
-                app.use(meddle(config));
-            } catch (e) {
-                t.ok(e instanceof TypeError, 'error is TypeError');
-                t.equal(e.message, 'Module name not defined in middleware config: {"something":"else"}', 'error message specifies module name is not defined');
-                throw e;
-            }
-        });
-
-        t.end();
-    });
+    var app;
+    try {
+      app = express();
+      app.use(await meddle(config));
+      t.fail('should have thrown');
+    } catch (e) {
+      t.ok(e instanceof TypeError, 'error is TypeError');
+      t.equal(e.message, 'Module name not defined in middleware config: {"something":"else"}', 'error message specifies module name is not defined');
+    }
+  });
 
 
-    t.test('missing module', function (t) {
-        var app;
-        t.throws(function() {
-            try {
-                app = express();
-                app.use(meddle(require('./fixtures/missing')));
-            } catch (e) {
-                t.ok(e instanceof Error);
-                t.equal(e.code, 'MODULE_NOT_FOUND');
-                throw e;
-            }
-        });
+  t.test('missing module', async function (t) {
+    var app;
 
-        t.end();
-    });
+    try {
+      app = express();
+      app.use(await meddle(require('./fixtures/missing')));
+      t.fail('should have thrown');
+    } catch (e) {
+      t.ok(e instanceof Error);
+      t.equal(e.code, 'MODULE_NOT_FOUND');
+    }
 
     t.end();
+  });
+
+  t.end();
 
 });
 
 
-test('factories', function (t) {
+tap.test('factories', function (t) {
 
-    t.test('custom middleware factories', function (t) {
-        var config, names, app;
+  t.test('custom middleware factories', async function (t) {
+    var config, names, app;
 
-        config = require('./fixtures/factories');
-        names = Object.keys(config);
-        app = express();
-        app.use(meddle(config));
+    config = require('./fixtures/factories');
+    names = Object.keys(config);
+    app = express();
+    app.use(await meddle(config));
 
-        t.equal(app._router.stack.length, names.length + 2, 'middleware stack is correct length');
-        names.forEach(function (name, i) {
-            var handle = app._router.stack[i + 2].handle;
-            t.equal(typeof handle, 'function', 'position ' + i + ' middleware is a function');
-            t.ok(handle.name, 'position ' + i + ' middleware has a name');
-            t.ok(handle.name.match(new RegExp(name, 'g')), 'position ' + i + ' middleware name matches ' + name);
-        });
-        t.end();
+    t.equal(app._router.stack.length, names.length + 2, 'middleware stack is correct length');
+    names.forEach(function (name, i) {
+      var handle = app._router.stack[i + 2].handle;
+      t.equal(typeof handle, 'function', 'position ' + i + ' middleware is a function');
+      t.ok(handle.name, 'position ' + i + ' middleware has a name');
+      t.ok(handle.name.match(new RegExp(name, 'g')), 'position ' + i + ' middleware name matches ' + name);
     });
+  });
 
+  t.end();
 });
 
 
-test('enabled', function (t) {
+tap.test('enabled', function (t) {
 
-    t.test('default to enabled', function (t) {
-        var config, names, app;
+  t.test('default to enabled', function (t) {
+    var config, names, app;
 
-        config = require('./fixtures/disabled');
-        names = Object.keys(config).filter(function (prop) {
-            return config[prop].enabled !== false;
-        });
-
-        resolve(config, function (err, config) {
-            app = express();
-            app.use(meddle(config));
-
-            t.equal(app._router.stack.length, 3, 'middleware stack is appropriate length');
-
-            names.forEach(function (name, i) {
-                var handle = app._router.stack[i + 2].handle;
-                t.equal(typeof handle, 'function', 'position ' + i + ' middleware is a function');
-                t.ok(handle.name, 'position ' + i + ' middleware has a name');
-                t.ok(handle.name.match(new RegExp(name, 'g')), 'position ' + i + ' middleware name matches ' + name);
-            });
-            t.end();
-        });
-
+    config = require('./fixtures/disabled');
+    names = Object.keys(config).filter(function (prop) {
+      return config[prop].enabled !== false;
     });
 
-    t.test('only use enabled middleware', function (t) {
-        var config, names, app;
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use(await meddle(config));
 
-        config = require('./fixtures/enabled');
-        names = Object.keys(config).filter(function (prop) {
-            return config[prop].enabled !== false;
-        });
+      t.equal(app._router.stack.length, 3, 'middleware stack is appropriate length');
 
-        resolve(config, function (err, config) {
-            app = express();
-            app.use(meddle(config));
-
-            t.equal(app._router.stack.length, 3, 'middleware stack is appropriate length');
-
-            names.forEach(function (name, i) {
-                var handle = app._router.stack[i + 2].handle;
-                t.equal(typeof handle, 'function', 'position ' + i + ' middleware is a function');
-                t.ok(handle.name, 'position ' + i + ' middleware has a name');
-                t.ok(handle.name.match(new RegExp(name, 'g')), 'position ' + i + ' middleware name matches ' + name);
-            });
-            t.end();
-        });
+      names.forEach(function (name, i) {
+        var handle = app._router.stack[i + 2].handle;
+        t.equal(typeof handle, 'function', 'position ' + i + ' middleware is a function');
+        t.ok(handle.name, 'position ' + i + ' middleware has a name');
+        t.ok(handle.name.match(new RegExp(name, 'g')), 'position ' + i + ' middleware name matches ' + name);
+      });
+      t.end();
     });
 
+  });
+
+  t.test('only use enabled middleware', function (t) {
+    var config, names, app;
+
+    config = require('./fixtures/enabled');
+    names = Object.keys(config).filter(function (prop) {
+      return config[prop].enabled !== false;
+    });
+
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use(await meddle(config));
+
+      t.equal(app._router.stack.length, 3, 'middleware stack is appropriate length');
+
+      names.forEach(function (name, i) {
+        var handle = app._router.stack[i + 2].handle;
+        t.equal(typeof handle, 'function', 'position ' + i + ' middleware is a function');
+        t.ok(handle.name, 'position ' + i + ' middleware has a name');
+        t.ok(handle.name.match(new RegExp(name, 'g')), 'position ' + i + ' middleware name matches ' + name);
+      });
+      t.end();
+    });
+  });
+
+  t.end();
 });
 
 
-test('events', function (t) {
+tap.test('events', function (t) {
 
-    t.test('before and after registration events', function (t) {
-        var config, app, events = 0;
+  t.test('before and after registration events', function (t) {
+    var config, app, events = 0;
 
-        config = require('./fixtures/defaults');
+    config = require('./fixtures/defaults');
 
-        resolve(config, function (err, config) {
-            app = express();
+    resolve(config, async function (err, config) {
+      app = express();
 
-            app.on('middleware:before', function () {
-                events += 1;
-            });
+      app.on('middleware:before', function () {
+        events += 1;
+      });
 
-            app.on('middleware:after', function () {
-                events += 1;
-            });
+      app.on('middleware:after', function () {
+        events += 1;
+      });
 
-            app.use(meddle(config));
-            t.equal(events, 12, 'registration events were triggered');
-            t.end();
-        });
+      app.use(await meddle(config));
+      t.equal(events, 12, 'registration events were triggered');
+      t.end();
     });
+  });
 
 
-    t.test('before and after named registration events', function (t) {
-        var config, events, app;
+  t.test('before and after named registration events', function (t) {
+    var config, events, app;
 
-        config = require('./fixtures/defaults');
-        resolve(config, function (err, config) {
-            events = 0;
-            app = express();
+    config = require('./fixtures/defaults');
+    resolve(config, async function (err, config) {
+      events = 0;
+      app = express();
 
-            app.on('middleware:before:favicon', function (eventargs) {
-                t.equal(eventargs.app, app);
-                events += 1;
-            });
+      app.on('middleware:before:favicon', function (eventargs) {
+        t.equal(eventargs.app, app);
+        events += 1;
+      });
 
-            app.on('middleware:after:favicon', function (eventargs) {
-                t.equal(eventargs.app, app);
-                events += 1;
-            });
+      app.on('middleware:after:favicon', function (eventargs) {
+        t.equal(eventargs.app, app);
+        events += 1;
+      });
 
-            app.use(meddle(config));
-            t.equal(events, 2, 'registration events were triggered');
-            t.end();
-        });
+      app.use(await meddle(config));
+      t.equal(events, 2, 'registration events were triggered');
+      t.end();
     });
+  });
 
+  t.end();
 });
 
 
-test('error middleware', function (t) {
+tap.test('error middleware', function (t) {
 
-    t.test('arity of 4', function (t) {
-        var config, app;
+  t.test('arity of 4', async function (t) {
+    var config, app;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(res.statusCode, 500, 'response statusCode is 500');
-                    t.equal(res.text, 'Oh noes!', 'response status is defined');
-                    cb(res.text);
-                });
-        }
-
-        config = require('./fixtures/error');
-
-        app = express();
-
-        // Putting the route before meddle() to ensure the router is seen first
-        app.get('/', function (req, res) {
-            throw new Error('Oh noes!');
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(res.statusCode, 500, 'response statusCode is 500');
+          t.equal(res.text, 'Oh noes!', 'response status is defined');
+          cb(res.text);
         });
+    }
 
-        app.use(meddle(config));
+    config = require('./fixtures/error');
 
-        req('/', function () {
-            t.end();
-        });
+    app = express();
+
+    // Putting the route before meddle() to ensure the router is seen first
+    app.get('/', function (req, res) {
+      throw new Error('Oh noes!');
     });
 
+    app.use(await meddle(config));
+
+    await new Promise((accept) => {
+      req('/', function () {
+        accept();
+      });
+    });
+  });
+
+  t.end();
 });
 
 
-test('routes', function (t) {
+tap.test('routes', function (t) {
 
-    t.test('route-specific middleware', function (t) {
-        var config, app;
+  t.test('route-specific middleware', function (t) {
+    var config, app;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
-
-        config = require('./fixtures/routes');
-        resolve(config, function (err, config) {
-            app = express();
-            app.use(meddle(config));
-
-            app.get('/', function (req, res) {
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.notOk(res.locals.routeC);
-                t.notOk(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/foo', function (req, res) {
-                t.ok(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.notOk(res.locals.routeC);
-                t.notOk(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/bar', function (req, res) {
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.ok(res.locals.routeC);
-                t.notOk(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/baz', function (req, res) {
-                t.notOk(res.locals.routeC);
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.ok(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            // trololol
-            req('/', function () {
-                req('/foo', function () {
-                    req('/bar', function () {
-                        req('/baz', function () {
-                            t.end();
-                        });
-                    });
-                });
-            });
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
         });
+    }
 
+    config = require('./fixtures/routes');
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use(await meddle(config));
+
+      app.get('/', function (req, res) {
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.notOk(res.locals.routeC);
+        t.notOk(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/foo', function (req, res) {
+        t.ok(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.notOk(res.locals.routeC);
+        t.notOk(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/bar', function (req, res) {
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.ok(res.locals.routeC);
+        t.notOk(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/baz', function (req, res) {
+        t.notOk(res.locals.routeC);
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.ok(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      // trololol
+      req('/', function () {
+        req('/foo', function () {
+          req('/bar', function () {
+            req('/baz', function () {
+              t.end();
+            });
+          });
+        });
+      });
     });
 
+  });
 
-    t.test('route-specific middleware (arrays)', function (t) {
-        var config, app;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
+  t.test('route-specific middleware (arrays)', function (t) {
+    var config, app;
 
-        config = require('./fixtures/array-routes');
-        resolve(config, function (err, config) {
-            app = express();
-            app.use(meddle(config));
-
-            app.get('/', function (req, res) {
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.notOk(res.locals.routeC);
-                t.notOk(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/foo', function (req, res) {
-                t.ok(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.ok(res.locals.routeC);
-                t.notOk(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/bar', function (req, res) {
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.ok(res.locals.routeC);
-                t.ok(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/baz', function (req, res) {
-                t.notOk(res.locals.routeC);
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.ok(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            // trololol
-            req('/', function () {
-                req('/foo', function () {
-                    req('/bar', function () {
-                        req('/baz', function () {
-                            t.end();
-                        });
-                    });
-                });
-            });
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
         });
+    }
 
+    config = require('./fixtures/array-routes');
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use(await meddle(config));
+
+      app.get('/', function (req, res) {
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.notOk(res.locals.routeC);
+        t.notOk(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/foo', function (req, res) {
+        t.ok(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.ok(res.locals.routeC);
+        t.notOk(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/bar', function (req, res) {
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.ok(res.locals.routeC);
+        t.ok(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/baz', function (req, res) {
+        t.notOk(res.locals.routeC);
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.ok(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      // trololol
+      req('/', function () {
+        req('/foo', function () {
+          req('/bar', function () {
+            req('/baz', function () {
+              t.end();
+            });
+          });
+        });
+      });
     });
 
+  });
 
-    t.test('baseroute route-specific middleware', function (t) {
-        var config, app;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .expect(200)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
+  t.test('baseroute route-specific middleware', async function (t) {
+    var config, app;
 
-        config = require('./fixtures/routes');
-
-        app = express();
-        app.use('/bam', meddle(config));
-
-        app.get('/bam', function (req, res) {
-            t.notOk(res.locals.routeA);
-            t.ok(res.locals.routeB);
-            t.notOk(res.locals.routeC);
-            res.status(200).end();
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .expect(200)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
         });
+    }
 
-        app.get('/bam/foo', function (req, res) {
-            t.ok(res.locals.routeA);
-            t.ok(res.locals.routeB);
-            t.notOk(res.locals.routeC);
-            res.status(200).end();
-        });
+    config = require('./fixtures/routes');
 
-        app.get('/bam/bar', function (req, res) {
-            t.notOk(res.locals.routeA);
-            t.ok(res.locals.routeB);
-            t.ok(res.locals.routeC);
-            res.status(200).end();
-        });
+    app = express();
+    app.use('/bam', await meddle(config));
 
-        // trololol
-        req('/bam', function () {
-            req('/bam/foo', function () {
-                req('/bam/bar', function () {
-                    t.end();
-                });
-            });
-        });
-
+    app.get('/bam', function (req, res) {
+      t.notOk(res.locals.routeA);
+      t.ok(res.locals.routeB);
+      t.notOk(res.locals.routeC);
+      res.status(200).end();
     });
 
-
-    t.test('baseroute route-specific middleware (arrays)', function (t) {
-        var config, app;
-
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .expect(200)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
-
-        config = require('./fixtures/array-routes');
-
-        resolve(config, function (err, config) {
-            app = express();
-            app.use('/bam', meddle(config));
-
-            app.get('/bam', function (req, res) {
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.notOk(res.locals.routeC);
-                t.notOk(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/bam/foo', function (req, res) {
-                t.ok(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.ok(res.locals.routeC);
-                t.notOk(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/bam/bar', function (req, res) {
-                t.notOk(res.locals.routeA);
-                t.ok(res.locals.routeB);
-                t.ok(res.locals.routeC);
-                t.ok(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            app.get('/baz', function (req, res) {
-                t.notOk(res.locals.routeA);
-                t.notOk(res.locals.routeB);
-                t.notOk(res.locals.routeC);
-                t.ok(res.locals.routeD);
-                res.status(200).end();
-            });
-
-            // trololol
-            req('/bam', function () {
-                req('/bam/foo', function () {
-                    req('/bam/bar', function () {
-                        req('/baz', function () {
-                            t.end();
-                        });
-                    });
-                });
-            });
-        });
-
+    app.get('/bam/foo', function (req, res) {
+      t.ok(res.locals.routeA);
+      t.ok(res.locals.routeB);
+      t.notOk(res.locals.routeC);
+      res.status(200).end();
     });
 
+    app.get('/bam/bar', function (req, res) {
+      t.notOk(res.locals.routeA);
+      t.ok(res.locals.routeB);
+      t.ok(res.locals.routeC);
+      res.status(200).end();
+    });
+
+    // trololol
+    await new Promise((accept) => {
+      req('/bam', function () {
+        req('/bam/foo', function () {
+          req('/bam/bar', function () {
+            accept();
+          });
+        });
+      });
+    });
+
+  });
+
+
+  t.test('baseroute route-specific middleware (arrays)', function (t) {
+    var config, app;
+
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .expect(200)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
+        });
+    }
+
+    config = require('./fixtures/array-routes');
+
+    resolve(config, async function (err, config) {
+      app = express();
+      app.use('/bam', await meddle(config));
+
+      app.get('/bam', function (req, res) {
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.notOk(res.locals.routeC);
+        t.notOk(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/bam/foo', function (req, res) {
+        t.ok(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.ok(res.locals.routeC);
+        t.notOk(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/bam/bar', function (req, res) {
+        t.notOk(res.locals.routeA);
+        t.ok(res.locals.routeB);
+        t.ok(res.locals.routeC);
+        t.ok(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      app.get('/baz', function (req, res) {
+        t.notOk(res.locals.routeA);
+        t.notOk(res.locals.routeB);
+        t.notOk(res.locals.routeC);
+        t.ok(res.locals.routeD);
+        res.status(200).end();
+      });
+
+      // trololol
+      req('/bam', function () {
+        req('/bam/foo', function () {
+          req('/bam/bar', function () {
+            req('/baz', function () {
+              t.end();
+            });
+          });
+        });
+      });
+    });
+
+  });
+
+  t.end();
 });
 
 
-test('composition', function (t) {
+tap.test('composition', function (t) {
 
-    t.test('parallel', function (t) {
-        var config, app, time;
+  t.test('parallel', async function (t) {
+    var config, app, time;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
-
-        config = require('./fixtures/parallel');
-
-        app = express();
-        app.use(meddle(config));
-
-        app.get('/', function (req, res) {
-            t.ok(res.locals.parallelA);
-            t.ok(res.locals.parallelB);
-            t.ok(res.locals.parallelC);
-            t.notOk(res.locals.parallelD);
-            res.status(200).end();
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
         });
+    }
 
-        time = Date.now();
-        req('/', function () {
-            time = Date.now() - time;
-            t.ok(time > 1450);
-            t.end();
-        });
+    config = require('./fixtures/parallel');
+
+    app = express();
+    app.use(await meddle(config));
+
+    app.get('/', function (req, res) {
+      t.ok(res.locals.parallelA);
+      t.ok(res.locals.parallelB);
+      t.ok(res.locals.parallelC);
+      t.notOk(res.locals.parallelD);
+      res.status(200).end();
     });
 
+    time = Date.now();
+    await new Promise((accept) => {
+      req('/', function () {
+        time = Date.now() - time;
+        t.ok(time > 1450);
+        accept();
+      });
+    });
+  });
 
-    t.test('race', function (t) {
-        var config, app, time;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
+  t.test('race', async function (t) {
+    var config, app, time;
 
-        config = require('./fixtures/race');
-
-        app = express();
-        app.use(meddle(config));
-
-        app.get('/', function (req, res) {
-            t.equal(res.locals.winner, 'a');
-            res.status(200).end();
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
         });
+    }
 
-        time = Date.now();
-        req('/', function () {
-            time = Date.now() - time;
-            t.ok(time < 50);
-            t.end();
-        });
+    config = require('./fixtures/race');
+
+    app = express();
+    app.use(await meddle(config));
+
+    app.get('/', function (req, res) {
+      t.equal(res.locals.winner, 'a');
+      res.status(200).end();
     });
 
+    time = Date.now();
+    await new Promise((accept) => {
+      req('/', function () {
+        time = Date.now() - time;
+        t.ok(time < 50);
+        accept();
+      });
+    });
+  });
 
-    t.test('fallback', function (t) {
-        var config, app, time;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
+  t.test('fallback', async function (t) {
+    var config, app, time;
 
-        config = require('./fixtures/fallback');
-
-        app = express();
-        app.use(meddle(config));
-
-        app.get('/', function (req, res) {
-            t.equal(res.locals.fallback, 'c');
-            res.status(200).end();
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
         });
+    }
 
-        req('/', function () {
-            t.end();
-        });
+    config = require('./fixtures/fallback');
+
+    app = express();
+    app.use(await meddle(config));
+
+    app.get('/', function (req, res) {
+      t.equal(res.locals.fallback, 'c');
+      res.status(200).end();
     });
 
+    await new Promise((accept) => {
+      req('/', function () {
+        accept();
+      });
+    });
+  });
+
+  t.end();
 });
 
-test('use module as context in factory method', function (t) {
-    t.test('context', function (t) {
-        var config, app;
+tap.test('use module as context in factory method', function (t) {
+  t.test('context', async function (t) {
+    var config, app;
 
-        function req(route, cb) {
-            var server;
-            server = request(app)
-                .get(route)
-                .end(function (err, res) {
-                    t.error(err, 'no response error');
-                    t.equal(typeof res, 'object', 'response is defined');
-                    t.equal(typeof res.body, 'object', 'response body is defined');
-                    cb(res.body);
-                });
-        }
-
-        config = require('./fixtures/context');
-
-        app = express();
-        app.use(meddle(config));
-
-        app.get('/', function (req, res) {
-            t.ok(res.locals.selfWasCalled,
-                'The method was called with a scope');
-            res.status(200).end();
+    function req(route, cb) {
+      var server;
+      server = request(app)
+        .get(route)
+        .end(function (err, res) {
+          t.error(err, 'no response error');
+          t.equal(typeof res, 'object', 'response is defined');
+          t.equal(typeof res.body, 'object', 'response body is defined');
+          cb(res.body);
         });
+    }
 
-        req('/', function () {
-            t.end();
-        });
+    config = require('./fixtures/context');
+
+    app = express();
+    app.use(await meddle(config));
+
+    app.get('/', function (req, res) {
+      t.ok(res.locals.selfWasCalled,
+        'The method was called with a scope');
+      res.status(200).end();
     });
+
+    return await new Promise((accept) => {
+      req('/', function () {
+        accept();
+      });
+    });
+  });
+
+  t.end();
 });

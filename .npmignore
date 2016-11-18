@@ -1,18 +1,11 @@
-# Automatically ignored per:
-# https://www.npmjs.org/doc/developers.html#Keeping-files-out-of-your-package
-#
-# .*.swp
-# ._*
-# .DS_Store
-# .git
-# .hg
-# .lock-wscript
-# .svn
-# .wafpickle-*
-# CVS
-# npm-debug.log
-# node_modules
+# Custom
+.transpiled
+.nyc_output
 
+# Wercker
+.wercker
+
+# Stock
 *.seed
 *.log
 *.csv
@@ -23,8 +16,6 @@
 *.orig
 
 work
-build
-test
 pids
 logs
 results
@@ -32,11 +23,9 @@ coverage
 lib-cov
 html-report
 xunit.xml
+node_modules
+npm-debug.log
 
-.travis.yml
-.eslintrc
-.jshintrc
-.npmignore
 .project
 .idea
 .settings
@@ -44,6 +33,7 @@ xunit.xml
 *.sublime-workspace
 *.sublime-project
 
+.DS_Store*
 ehthumbs.db
 Icon?
 Thumbs.db

@@ -7,7 +7,7 @@
                 "enabled": true,
                 "priority": 10,
                 "module": {
-                    "name": "./fixtures/middleware/fallback",
+                    "name": "../test/fixtures/middleware/fallback",
                     "method": "middlewareA"
                 }
             },
@@ -15,7 +15,7 @@
                 "enabled": true,
                 "priority": 20,
                 "module": {
-                    "name": "./fixtures/middleware/fallback",
+                    "name": "../test/fixtures/middleware/fallback",
                     "method": "middlewareB"
                 }
             },
@@ -23,7 +23,7 @@
                 "enabled": true,
                 "priority": 30,
                 "module": {
-                    "name": "./fixtures/middleware/fallback",
+                    "name": "../test/fixtures/middleware/fallback",
                     "method": "middlewareC"
                 }
             }

@@ -6,21 +6,21 @@
             "middlewareA": {
                 "enabled": true,
                 "module": {
-                    "name": "./fixtures/middleware/race",
+                    "name": "../test/fixtures/middleware/race",
                     "method": "middlewareA"
                 }
             },
             "middlewareB": {
                 "enabled": true,
                 "module": {
-                    "name": "./fixtures/middleware/race",
+                    "name": "../test/fixtures/middleware/race",
                     "method": "middlewareB"
                 }
             },
             "middlewareC": {
                 "enabled": true,
                 "module": {
-                    "name": "./fixtures/middleware/race",
+                    "name": "../test/fixtures/middleware/race",
                     "method": "middlewareC"
                 }
             }

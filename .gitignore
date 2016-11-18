@@ -1,3 +1,11 @@
+# Custom
+.transpiled
+.nyc_output
+
+# Wercker
+.wercker
+
+# Stock
 *.seed
 *.log
 *.csv
