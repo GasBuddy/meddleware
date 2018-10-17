@@ -1,14 +1,14 @@
 {
   "name": "@gasbuddy/meddleware",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Configuration-based middleware registration for express.",
   "main": "build/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "tap --node-arg=-r --node-arg=babel-register test/*.js",
-    "cover": "istanbul cover tap -- --node-arg=-r --node-arg=babel-register test/*.js",
+    "test": "tap --node-arg=-r --node-arg=@babel/register test/*.js",
+    "cover": "istanbul cover tap -- --node-arg=-r --node-arg=@babel/register test/*.js",
     "dryrun": "(TARBALL=`npm pack` ; tar ztvf $TARBALL ; rm -f $TARBALL)",
     "build": "babel src --out-dir build",
     "prepublish": "npm run build"
@@ -25,25 +25,26 @@
     }
   ],
   "devDependencies": {
-    "babel-cli": "^6.4.5",
-    "babel-preset-gasbuddy": "^1.0.0",
-    "body-parser": "^1.0.2",
+    "@babel/cli": "^7.1.2",
+    "@babel/register": "^7.0.0",
+    "babel-preset-gasbuddy": "^4.1.0",
+    "body-parser": "^1.18.3",
     "cookie-parser": "^1.0.1",
-    "express": "^4.6.1",
-    "istanbul": "^0.2.7",
-    "morgan": "^1.0.0",
-    "serve-favicon": "^2.0.1",
-    "serve-static": "^1.0.4",
+    "express": "^4.16.4",
+    "istanbul": "^0.4.5",
+    "morgan": "^1.9.1",
+    "serve-favicon": "^2.5.0",
+    "serve-static": "^1.13.2",
     "shortstop": "^1.0.1",
     "shortstop-handlers": "^1.0.0",
     "shortstop-regex": "0.0.1",
-    "supertest": "^0.11.0",
-    "tap": "^8.0.1"
+    "supertest": "^3.3.0",
+    "tap": "^12.0.1"
   },
   "dependencies": {
-    "caller": "0.0.1",
-    "debuglog": "0.0.4",
-    "core-util-is": "^1.0.1"
+    "caller": "^1.0.1",
+    "core-util-is": "^1.0.1",
+    "debuglog": "^1.0.1"
   },
   "repository": {
     "type": "git",

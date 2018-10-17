@@ -191,8 +191,8 @@ function compare(a, b) {
  */
 function normalize(mountpath, route) {
 
-  if (thing.isRegExp(route)) {
-    // we cannot normalize regexes
+  if (thing.isRegExp(route) || Array.isArray(route)) {
+    // we cannot normalize regexes and arrays
     return route;
   }
 
